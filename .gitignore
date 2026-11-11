@@ -1,0 +1,22 @@
+# data, models and outputs stay on your computer, not GitHub
+data/*
+models/*
+outputs/*
+!data/.gitkeep
+!models/.gitkeep
+!outputs/.gitkeep
+
+# large data formats
+*.csv
+*.parquet
+*.joblib
+*.pkl
+
+# Python / notebook clutter
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+
+# secrets: NEVER upload these
+kaggle.json
+.env
