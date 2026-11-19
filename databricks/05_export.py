@@ -9,8 +9,6 @@
 
 # COMMAND ----------
 
-from pyspark.sql import functions as F
-
 TXN_TABLE = "workspace.aml.transactions_split"
 RULES_TABLE = "workspace.aml.rules_scored"
 EXPORT_DIR = "/Volumes/workspace/default/raw_data/export"
