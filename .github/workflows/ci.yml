@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+
+jobs:
+  checks:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: astral-sh/setup-uv@v5
+
+      - name: Lint (ruff)
+        run: uvx ruff check .
+
+      - name: Syntax check (all Python files compile)
+        run: uv run --no-project python -m compileall -q databricks ml common
+
+      - name: Block data and secrets from being committed
+        run: |
+          bad=$(git ls-files | grep -Ei '\.(csv|parquet|joblib|pkl)$|kaggle\.json$|(^|/)\.env$' || true)
+          if [ -n "$bad" ]; then
+            echo "These files must not be committed:"
+            echo "$bad"
+            exit 1
+          fi
+
+      - name: Check lockfile is in sync with pyproject.toml
+        run: uv lock --check
