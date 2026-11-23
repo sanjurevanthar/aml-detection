@@ -1,0 +1,14 @@
+{
+  "rows": 5077237,
+  "missing_total": 0,
+  "duplicate_rows": 9,
+  "first_timestamp": "2022-09-01 00:00:00",
+  "last_timestamp": "2022-09-10 23:59:00",
+  "label_values": [
+    0,
+    1
+  ],
+  "zero_or_negative_paid": 0,
+  "self_transfers": 590819,
+  "laundering_rate": 0.000890641898339589
+}

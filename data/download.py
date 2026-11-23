@@ -4,8 +4,8 @@ Only the requested files are downloaded. The full dataset is ~20+ GB
 (Medium/Large variants), so we never fetch all of it.
 
 Usage (from the project root):
-    uv run python ml/download_data.py                    # HI-Small_Trans.csv
-    uv run python ml/download_data.py HI-Small_Patterns.txt
+    python data/download.py                    # HI-Small_Trans.csv
+    python data/download.py HI-Small_Patterns.txt
 """
 
 import argparse

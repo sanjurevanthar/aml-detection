@@ -3,6 +3,7 @@ data/*
 models/*
 outputs/*
 !data/.gitkeep
+!data/download.py
 !models/.gitkeep
 !outputs/.gitkeep
 
@@ -16,6 +17,9 @@ outputs/*
 .venv/
 __pycache__/
 .ipynb_checkpoints/
+*.pyc
+.DS_Store
+*.log
 
 # secrets: NEVER upload these
 kaggle.json
