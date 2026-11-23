@@ -20,3 +20,8 @@ __pycache__/
 # secrets: NEVER upload these
 kaggle.json
 .env
+# keep small result tables and the bundled sample in git
+!results/
+!results/**
+!data/sample/
+!data/sample/**
