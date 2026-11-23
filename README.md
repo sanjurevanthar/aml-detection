@@ -18,6 +18,7 @@ the code; the report explains what we found and what the evidence supports.
 - [x] Rule baseline with train-only thresholds (`src/rules.py`).
 - [x] First ML comparator (logistic regression) and shared ranking metrics.
 - [x] Single entry point `main.py` with a bundled, runnable sample.
+- [x] Full-data run and preliminary baseline-vs-model comparison.
 - [ ] LightGBM / random forest, tuning, SHAP, error analysis, final report.
 
 ## Environment
@@ -65,6 +66,12 @@ python main.py --full
 ```
 
 This writes the report evidence to `results/full/` using the same code path.
+It takes about **22 minutes** on the development machine (CPU, ~3 GB peak RSS).
+Preliminary full-data outputs:
+[comparison.csv](results/full/comparison.csv),
+[metrics.json](results/full/metrics.json), and
+[recall plot](results/full/recall_at_top_1pct.png).
+
 To rebuild the bundled sample from the full file:
 
 ```bash

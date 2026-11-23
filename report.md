@@ -16,12 +16,14 @@ transactions, ~0.1% labelled laundering) and split it by time: train on days
 transaction sees only account activity from strictly earlier minutes — and all
 learned thresholds/preprocessing are fitted on training days only. The current
 iteration compares a five-rule baseline with class-weighted logistic
-regression. On the bundled 203,095-row sample, logistic regression reaches
-PR-AUC 0.0096 and recall@1% 0.079 versus 0.0012 and 0.000 for the rules, but
-the sample has only 38 positive test rows and is a functionality check, not
-evidence for the research question. Full-data results are being generated and
-will replace these numbers here. A major limitation is the anomalous tail of
-the raw file (days 10–17), which is excluded from the primary experiment.
+regression. On the full test set (862,792 transactions, 956 laundering), the
+model reaches PR-AUC 0.0175 and recall@1% 0.233 versus 0.0013 and 0.0094 for
+the rules — about 25× more laundering caught in the top 1%, clearing the 2×
+benchmark. Precision@1% is still low (2.6% vs 0.10%), so the ranked list is
+useful but far from a clean alert queue. The bundled 203,095-row sample is
+reported separately as a functionality check. A major limitation is the
+anomalous tail of the raw file (days 10–17), which is excluded from the primary
+experiment.
 
 ## Introduction
 
@@ -90,7 +92,29 @@ class. All methods are scored on identical test rows.
 
 ## Results
 
-Sample run (`python main.py`, 203,095 rows, 34,517 test rows, 38 positives):
+**Full experiment** (`python main.py --full`; 5,077,237 rows after excluding
+days 10–17; 862,792 test rows with 956 laundering transactions):
+
+| Method | PR-AUC ↑ | ROC-AUC ↑ | Recall@1% ↑ | Precision@1% ↑ | TP@val cutoff | FP@val cutoff |
+|---|---:|---:|---:|---:|---:|---:|
+| Rule baseline | 0.0013 | 0.6056 | 0.0094 | 0.0010 | 9 | 8,798 |
+| Logistic regression | 0.0175 | 0.9466 | 0.2333 | 0.0258 | 412 | 22,222 |
+
+Source: [comparison.csv](results/full/comparison.csv),
+[metrics.json](results/full/metrics.json),
+[figure](results/full/recall_at_top_1pct.png), and
+[coefficients](results/full/logreg_coefficients.csv). Rules and the model were
+scored on identical test rows; thresholds were fitted on training days and the
+alert cutoff was chosen on validation days only.
+
+The model found 223 of 956 test laundering transactions in the riskiest 1%
+versus 9 for the rules — **24.8× more**, well beyond the 2× benchmark. Its
+PR-AUC is ~13.6× the baseline and ROC-AUC rises from 0.61 to 0.95. The tradeoff
+is alert volume: even the better model's top 1% contains ~22,000 innocent
+transactions, so precision@1% is only 2.6%. The validation-chosen cutoff
+flags ~2.6% of test rows and catches 43.1% of laundering at 1.8% precision.
+
+**Sample run** (`python main.py`, 203,095 rows, 34,517 test rows, 38 positives):
 
 | Method | PR-AUC ↑ | ROC-AUC ↑ | Recall@1% ↑ | Precision@1% ↑ |
 |---|---:|---:|---:|---:|
@@ -101,32 +125,40 @@ Source: [comparison.csv](results/sample/comparison.csv),
 [metrics.json](results/sample/metrics.json),
 [figure](results/sample/recall_at_top_1pct.png), and
 [row-level scores](results/sample/test_scores.csv).
-`FULL_RESULTS_PENDING` — the full 5.08M-row run is in progress; its table will
-be added here with the same columns and a link to `results/full/`.
 
-The sample shows the linear model ranking laundering far above the rules
-(ROC-AUC 0.91 vs 0.57), but the 0.079 recall@1% corresponds to only three
-caught transactions, so it is not evidence for the 2× benchmark.
+The sample shows the same ranking pattern (ROC-AUC 0.91 vs 0.57), but its
+0.079 recall@1% is only three caught transactions, so it is a functionality
+check rather than evidence for the research question.
 
 ## Discussion
 
-The sample experiment demonstrates the pipeline and confirms that the
-causal-feature implementation is deterministic. Two honest caveats matter.
-First, the rule baseline's top-1% bucket is dominated by innocent high-value or
-cash transactions; its zero recall on the sample may improve on the full data,
-where there are ~950 test positives instead of 38. Second, the anomalous
-days 10–17 could support a separate sensitivity analysis, but their label rate
-is so different that including them would make the headline metric hard to
-interpret. We will report any remaining limitations, failed attempts, and
-error analysis after the full comparison and model-tuning iterations.
+The full-data comparison answers the research question in the affirmative:
+the logistic model catches ~25× more laundering in the top 1% than the rule
+baseline. The gain is not a split artifact — both methods see the same 956
+positive test rows, features are causal, and all learned statistics come from
+training days. The rule engine's top-1% list is dominated by innocent
+high-value or cash transactions; only 9 of 8,628 flagged rows are laundering.
+The model is much better at ordering risk, but it is still not a clean alert
+queue: 22,222 false positives accompany 412 true positives at the
+validation-chosen cutoff, and precision@1% is 2.6%. Investigators would still
+need to review many innocent accounts.
+
+Two limitations qualify the result. First, the anomalous days 10–17 were
+excluded; including their ~59% laundering rate would make the headline metric
+hard to interpret and would not reflect the proposal's ~10-day scope. Second,
+this iteration uses one linear model with no hyperparameter tuning, so the
+final report will test whether tree-based models improve precision at fixed
+recall and will examine which transaction types the model misses. The
+deterministic causal-feature implementation was checked with unit tests that
+change a future row and verify earlier history is unchanged.
 
 ## Conclusion
 
-The implemented pipeline applies one time-based split and one set of metrics
-to both a rule baseline and a first ML comparator, with leakage safeguards at
-the feature, threshold, and preprocessing levels. Sample results show the ML
-model ranking substantially better than the rules; the research question will
-be answered using the full experiment before the final submission.
+On the full HI-Small test period, a class-weighted logistic model using
+past-only features ranked laundering far above the rule baseline: recall@1%
+was 0.233 versus 0.009 (24.8×), and PR-AUC was 0.0175 versus 0.0013. The
+2× research benchmark is therefore met, though the low precision@1% shows
+that ranking improvements do not eliminate false-alert workload.
 
 ## References
 
