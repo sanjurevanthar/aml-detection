@@ -1,12 +1,15 @@
 # src/eda_report.py -- saves EDA tables and figures to results/full/
 # Run from the project root:  python -m src.eda_report
 import os
+
+import matplotlib
 import numpy as np
 import pandas as pd
-import matplotlib
+
 matplotlib.use("Agg")
 import matplotlib.pyplot as plt
-from src.data import load_raw, quality_report, clean
+
+from src.data import clean, load_raw, quality_report
 
 OUT = "results/full"
 os.makedirs(OUT, exist_ok=True)
