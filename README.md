@@ -67,3 +67,25 @@ flowchart TD
 - Source: [IBM Transactions for Anti-Money Laundering (Kaggle)](https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml), file `HI-Small_Trans.csv`.
 - Download locally: `uv run python ml/download_data.py` (saves to `data/raw/`, git-ignored).
 - Upload to Databricks: `/Volumes/workspace/default/raw_data/HI-Small_Trans.csv`.
+
+## Results: rule-engine baseline (Databricks)
+
+- **Dashboard:** [Rule engine baseline dashboard](https://dbc-d3eb941a-e954.cloud.databricks.com/dashboardsv3/01f1e3e27b141734bc19c5b4e279a62b/published?o=7474655710448676)
+  (requires access to the Databricks workspace; if you cannot open it, use the PDF below).
+- **PDF copy of the dashboard:** [reports/Aml Dashboard 2026-11-19 01_28_49 2026-11-19 06_52.pdf](reports/Aml%20Dashboard%202026-11-19%2001_28_49%202026-11-19%2006_52.pdf)
+- **Notebook:** [databricks/03_rules_engine.py](databricks/03_rules_engine.py)
+
+Validation split, top 1% review budget (10,149 of 1,014,951 transactions):
+
+| Metric | Value |
+|---|---|
+| Laundering cases in split | 1,080 |
+| Caught in top 1% | 14 |
+| Recall@top 1% | 1.30% |
+| Precision@top 1% | 0.14% |
+| Precision@top 100 | 0.00% |
+
+What the dashboard shows: about two thirds of laundering cases score 0 (no rule fires),
+and the highest laundering rates appear at scores 5 and 6 on small counts. The rules are
+a weak baseline (about 1.3x better than random), which is the bar the ML models must
+beat by 2x.

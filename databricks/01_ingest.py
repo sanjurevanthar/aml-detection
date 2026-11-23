@@ -1,4 +1,8 @@
 # Databricks notebook source
+# /// script
+# [tool.databricks.environment]
+# environment_version = "6"
+# ///
 # MAGIC %md
 # MAGIC # 01 - Ingest
 # MAGIC Read the raw IBM AML CSV, clean the column names, build keys and `txn_id`,
@@ -22,7 +26,7 @@ TABLE = f"{SCHEMA}.transactions"
 
 # COMMAND ----------
 
-raw = spark.read.csv(RAW_PATH, header=True, inferSchema=False)
+raw = spark.read.csv("/Volumes/workspace/default/raw_data/raw/HI-Small_Trans.csv", header=True, inferSchema=False)
 print("Raw columns:", raw.columns)  # note: "Account" appears twice
 
 # COMMAND ----------
