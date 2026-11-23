@@ -1,0 +1,40 @@
+rows: 5078345
+missing_total: 0
+duplicate_rows: 9
+first_timestamp: 2022-09-01 00:00:00
+last_timestamp: 2022-09-18 16:18:00
+label_values: [0, 1]
+zero_or_negative_paid: 0
+self_transfers: 591212
+laundering_rate: 0.0010194266045335635
+
+Rows inside duplicate groups: 18 | laundering among them: 0
+Same account ID: 591212 | same account ID AND same bank: 591212
+Laundering among self-transfers: 11
+col_0           False   True 
+pay_format                   
+ACH            529450   71347
+Bitcoin        119774   26317
+Cash           489436    1455
+Cheque        1858265    6066
+Credit Card   1319148    4176
+Reinvestment        0  481056
+Wire           171060     795
+
+Top payment currencies:
+pay_ccy
+US Dollar      1895172
+Euro           1168297
+Swiss Franc     234860
+Yuan            213752
+Shekel          192184
+Rupee           190202
+UK Pound        180738
+Yen             155209
+Ruble           155178
+Bitcoin         146066
+Name: count, dtype: int64
+Currency mismatch share: 0.014211322783308342
+
+Saved files in results/full
+['data_summary.csv', 'eda_amount_dist.png', 'eda_by_day.csv', 'eda_by_day.png', 'eda_by_pay_format.csv', 'eda_by_pay_format.png', 'eda_console_output.txt']
