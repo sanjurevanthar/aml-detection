@@ -1,5 +1,5 @@
-# src/eda_figures.py -- saves EDA tables and figures to results/full/
-# Run from the project root:  python -m src.eda_figures
+# src/eda_report.py -- saves EDA tables and figures to results/full/
+# Run from the project root:  python -m src.eda_report
 import os
 import numpy as np
 import pandas as pd
