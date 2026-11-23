@@ -1,69 +1,128 @@
 # Money Laundering Classification in Bank Transactions Using Machine Learning
 
-EAS 510 Project 2: rule-based engine (PySpark on Databricks) vs ML models
-(logistic regression, random forest, LightGBM) on the IBM AML HI-Small dataset.
+EAS 510 Project 2 (Fall 2026) — team: **Maithili Yogesh Joshi** (50754842) and
+**Sanju Authimahalingam Rajasri** (50742711).
 
-**Research question:** if investigators can only review the top 1% of transactions,
-can our best ML model catch at least 2x more money laundering than a rule-based system?
+**Research question.** If investigators can only review the riskiest 1% of
+transactions, can a machine-learning model catch at least 2× more laundering
+than a simple rule-based system?
 
-## Architecture
+The official report is [report.md](report.md). This README explains how to run
+the code; the report explains what we found and what the evidence supports.
 
-Two detectors, one fair test. Both score the **same test transactions**, and both are
-judged against the same ground truth column, `is_laundering`.
+## Current status (interim, 23 Nov 2026)
 
-```mermaid
-flowchart TD
-    A["HI-Small_Trans.csv<br/>5.08M transactions"] --> B
+- [x] Full IBM HI-Small CSV loaded locally and cleaned (`src/data.py`).
+- [x] EDA and data-quality tables/figures saved under `results/full/`.
+- [x] Causal, past-only transaction and account-history features (`src/features.py`).
+- [x] Rule baseline with train-only thresholds (`src/rules.py`).
+- [x] First ML comparator (logistic regression) and shared ranking metrics.
+- [x] Single entry point `main.py` with a bundled, runnable sample.
+- [ ] LightGBM / random forest, tuning, SHAP, error analysis, final report.
 
-    subgraph DBX["Databricks (PySpark)"]
-        B["01_ingest<br/>clean columns, build keys + txn_id"] --> C["02_split<br/>train / val / test by time"]
-        C --> D["03_rules_engine<br/>rule flags + rule_score"]
-        C -.-> E["04_features (optional)<br/>behavior features"]
-        D --> F["05_export<br/>write Parquet"]
-        E -.-> F
-    end
+## Environment
 
-    F --> G["Parquet files (data/)"]
+Tested with **Python 3.13.9 on macOS**. The sample run uses only CPU and finishes
+in about **15 seconds** on the development machine; it needs no network access,
+credentials, GPU, or paid service once dependencies are installed.
 
-    subgraph LOCAL["Laptop / Colab (Python)"]
-        G --> H["features.py<br/>past-only features"]
-        H --> I["train.py<br/>LogReg, RF, LightGBM, Isolation Forest"]
-    end
+Pinned dependency versions are in [requirements.txt](requirements.txt):
+`numpy==2.3.5`, `pandas==2.3.3`, `scikit-learn==1.7.2`, `matplotlib==3.10.6`,
+`joblib==1.5.2`, `kagglehub==1.0.3`.
 
-    D --> J
-    I --> J["evaluate.py + common/metrics.py<br/>same metrics for rules and ML,<br/>joined by txn_id on the test set"]
-    J --> K["reports/results.md<br/>confusion matrix, PR-AUC, recall@top 1%"]
+## Exact commands
+
+From a fresh clone, at the repository root:
+
+```bash
+python -m pip install -r requirements.txt
+python main.py
 ```
 
-### What each step does
+That is the default **sample** run. It writes to `results/sample/` and prints
+PR-AUC, ROC-AUC, recall at the top 1%, and precision at the top 1% for both the
+rule baseline and logistic regression. See
+[results/sample/comparison.csv](results/sample/comparison.csv),
+[results/sample/metrics.json](results/sample/metrics.json), and
+[results/sample/recall_at_top_1pct.png](results/sample/recall_at_top_1pct.png).
+Row-level scores are in
+[results/sample/test_scores.csv](results/sample/test_scores.csv).
 
-| Step | File | Plain-English job |
-|---|---|---|
-| 1 | `databricks/01_ingest.py` | Read the raw CSV, give columns clean names, build `from_key` / `to_key` (bank + account) and a unique `txn_id`, save the Delta table `workspace.aml.transactions`. |
-| 2 | `databricks/02_split.py` | Add a `split` column (train ~60% / val ~20% / test ~20%) by **time**, once, so rules and ML are tested on identical rows. |
-| 3 | `databricks/03_rules_engine.py` | Flag each transaction with simple rules (large amount, round amount, currency change, cash/Bitcoin, high velocity) and sum them into `rule_score`. This is the baseline. |
-| 4 | `databricks/04_features.py` | Optional. Spark version of the behavior features, only if pandas is too slow. |
-| 5 | `databricks/05_export.py` | Write the results as Parquet so the ML side can load them. |
-| 6 | `ml/features.py`, `train.py` | Build features from past data only, train and tune the models. |
-| 7 | `ml/evaluate.py`, `common/metrics.py` | Score rules and ML with the same metrics on the same test rows. |
+### Full experiment
 
-### Design decisions
+The full CSV is ~454 MB and is intentionally **not** committed. Obtain it from
+[Kaggle](https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml),
+then either use `kagglehub` (requires Kaggle credentials):
 
-- **Time-based split, saved once.** Predicting the future from the past is the real use
-  case. A random split would leak future behavior into training.
-- **One source of truth for the split.** `02_split` creates it; rules and ML both read it.
-- **Train-only statistics.** Thresholds (such as the 99th-percentile amount) are learned
-  on train days only.
-- **Join on `txn_id`.** Rule scores and ML scores are matched row by row for the final
-  comparison.
-- **Parquet as the hand-off format.** A compact, typed, columnar file that Spark writes
-  and pandas reads quickly. Much smaller than CSV.
-- **Metrics:** PR-AUC (main), recall@top 1%, precision@top 100, precision / recall / F1,
-  ROC-AUC, confusion matrix. Never accuracy, since only 1 in 1,000 transactions is
-  laundering.
+```bash
+python data/download.py HI-Small_Trans.csv
+```
 
-### Data
+or place the file at `data/raw/HI-Small_Trans.csv` yourself. Then run:
 
-- Source: [IBM Transactions for Anti-Money Laundering (Kaggle)](https://www.kaggle.com/datasets/ealtman2019/ibm-transactions-for-anti-money-laundering-aml), file `HI-Small_Trans.csv`.
-- Download locally: `uv run python ml/download_data.py` (saves to `data/raw/`, git-ignored).
-- Upload to Databricks: `/Volumes/workspace/default/raw_data/HI-Small_Trans.csv`.
+```bash
+python main.py --full
+```
+
+This writes the report evidence to `results/full/` using the same code path.
+To rebuild the bundled sample from the full file:
+
+```bash
+python -m src.make_sample
+```
+
+Optional sanity checks (standard library only):
+
+```bash
+python -m unittest discover -s tests -v
+```
+
+## Data and sample
+
+- **Source:** IBM Transactions for Anti-Money Laundering, `HI-Small_Trans.csv`
+  (IBM Research & ETH Zurich, via Kaggle). Each row is one bank transaction;
+  `is_laundering` is the supervised target.
+- **Full experimental window:** days 0–9 (2022-09-01 to 2022-09-10). The raw
+  file also has days 10–17: only ~1,100 transactions, but ~59% laundering. That
+  tail is unlike the ~0.1% rate in the main period, so the primary experiment
+  excludes it. The exclusion is a documented scope decision, not a silent drop.
+- **Bundled sample:** every 25th row of days 0–9, in original row order —
+  203,095 rows with 179 laundering rows, 18.4 MB. This keeps the time structure
+  and the ~0.088% class rate. Sample results check that the pipeline works;
+  conclusions about model quality use the full experiment.
+- **Split:** time-based by day, fixed in `config.py` — train days 0–5,
+  validation days 6–7, test days 8–9.
+
+## Leakage safeguards
+
+- Past features for a transaction use activity from **strictly earlier
+  minutes** only; same-minute rows are excluded (`src/features.py`).
+- Feature construction never reads `is_laundering`.
+- Rule thresholds, the imputer, the one-hot encoder, and the model are all
+  fitted on **training days only** (the last two inside a scikit-learn
+  `Pipeline`).
+- Validation is used for the alert cutoff; the test set is scored once per
+  method at the end.
+
+## Repository map
+
+| Path | Purpose |
+|---|---|
+| `main.py` | Single entry point; `--full` selects the full experiment. |
+| `config.py` | Seeds, paths, split days, rule quantiles, model settings. |
+| `src/data.py` | Raw CSV loading, cleaning, quality report. |
+| `src/features.py` | Past-only transaction and account-history features. |
+| `src/rules.py` | Rule baseline with train-only thresholds. |
+| `src/metrics.py` | Shared ranking metrics and confusion matrix. |
+| `src/split.py` | Time-based split and anomalous-tail exclusion. |
+| `src/eda_report.py` | EDA tables/figures for `results/full/`. |
+| `src/make_sample.py` | Rebuild the bundled sample from the full CSV. |
+| `data/download.py` | Optional Kaggle download helper. |
+| `databricks/` | Earlier Spark ingest prototype (not needed for the sample run). |
+
+## Notes for graders
+
+The sample run is a functionality check, so its metrics are intentionally
+noisy (only 38 positive test rows). Treat the full-run numbers in
+[report.md](report.md) as the evidence for the research question. Variation is
+expected from BLAS threading and sklearn version; the seed is fixed at 42.
