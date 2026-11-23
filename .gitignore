@@ -25,3 +25,7 @@ kaggle.json
 !results/**
 !data/sample/
 !data/sample/**
+
+# local docs, not pushed (keep the folder via .gitkeep)
+docs/*
+!docs/.gitkeep
