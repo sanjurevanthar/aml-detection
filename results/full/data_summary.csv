@@ -1,0 +1,10 @@
+,value
+rows,5078345
+missing_total,0
+duplicate_rows,9
+first_timestamp,2022-09-01 00:00:00
+last_timestamp,2022-09-18 16:18:00
+label_values,"[0, 1]"
+zero_or_negative_paid,0
+self_transfers,591212
+laundering_rate,0.0010194266045335635
